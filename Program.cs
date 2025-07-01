@@ -1,5 +1,7 @@
 ﻿using ConsoleApp1.Data;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,7 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseMiddleware<ConsoleApp1.Exception.ExceptionMiddleware>();
 app.UseExceptionHandler("/error");
 
 app.MapControllers();
