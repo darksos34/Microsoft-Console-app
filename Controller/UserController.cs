@@ -1,5 +1,6 @@
 ﻿using ConsoleApp1.Data;
 using ConsoleApp1.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,14 +37,17 @@ public class UsersController : ControllerBase
             .ToListAsync();
         return Ok(users);
     }
-
+    
     /// <summary>
     /// Creates a new user.
     /// </summary>
-    /// <param name="newUser">The user data to create.</param>
+    /// <param name="dto">The user data to create.</param>
     /// <returns>The created user with assigned ID.</returns>
     /// <response code="201">Returns the newly created user</response>
     /// <response code="400">If the user data is invalid</response>
+    [HttpPost]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] UserDto dto)
     {
         if (!ModelState.IsValid)
@@ -53,17 +57,19 @@ public class UsersController : ControllerBase
             string.IsNullOrWhiteSpace(dto.Email) ||
             string.IsNullOrWhiteSpace(dto.Username))
         {
-            return BadRequest("Name, Email, and Username are required.");
+            return BadRequest(new { Error = "Name, Email, and Username are required." });
         }
 
         var user = new User
         {
-            Name = dto.Name,
-            Email = dto.Email,
-            Username = dto.Username
+            Name = dto.Name.Trim(),
+            Email = dto.Email.Trim(),
+            Username = dto.Username.Trim()
         };
+
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
+
         var resultDto = new UserDto
         {
             Id = user.Id,
@@ -71,6 +77,34 @@ public class UsersController : ControllerBase
             Email = user.Email,
             Username = user.Username
         };
-        return CreatedAtAction(nameof(GetUsersAsList), new { id = user.Id }, resultDto);
+
+        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, resultDto);
+    }
+
+    /// <summary>
+    /// Gets a user by ID.
+    /// </summary>
+    /// <param name="id">The user ID.</param>
+    /// <returns>The user if found.</returns>
+    /// <response code="200">Returns the user</response>
+    /// <response code="404">If the user is not found</response>
+    [HttpGet("{id}")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserDto>> GetUserById(int id)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null)
+            return NotFound();
+
+        var dto = new UserDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Username = user.Username
+        };
+
+        return Ok(dto);
     }
 }
