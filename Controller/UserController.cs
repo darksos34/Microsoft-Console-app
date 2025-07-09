@@ -44,11 +44,17 @@ public class UsersController : ControllerBase
     /// <returns>The created user with assigned ID.</returns>
     /// <response code="201">Returns the newly created user</response>
     /// <response code="400">If the user data is invalid</response>
-    [HttpPost]
     public async Task<ActionResult<UserDto>> CreateUser([FromBody] UserDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
+        if (string.IsNullOrWhiteSpace(dto.Name) ||
+            string.IsNullOrWhiteSpace(dto.Email) ||
+            string.IsNullOrWhiteSpace(dto.Username))
+        {
+            return BadRequest("Name, Email, and Username are required.");
+        }
 
         var user = new User
         {
